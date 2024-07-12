@@ -80,9 +80,9 @@ WSGI_APPLICATION = 'orm_shop.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'dj_orm',
+        'NAME': 'orm_shop',
         'USER': 'postgres',
-        'PASSWORD': '1',
+        'PASSWORD': 'Serg1711',
         'HOST': 'localhost',
         'PORT': 5432
     }
