@@ -1,43 +1,48 @@
-from django.http import Http404
-from django.shortcuts import render
+from rest_framework import viewsets, permissions
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from .models import Post, Comment, Like
+from .serializers import PostSerializer, CommentSerializer
 
-from main.models import Car
+class PostViewSet(viewsets.ModelViewSet):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
-def home(request):
-	template_name = 'home.html'
-	return render(request, template_name, {})
+    def update(self, request, *args, **kwargs):
+        post = self.get_object()
+        if post.author == self.request.user:
+            return super().update(request, *args, **kwargs)
+        else:
+            return Response({'error': 'You can only edit your own posts'}, status=403)
 
+    @action(detail=True, methods=['post'])
+    def like(self, request, pk=None):
+        post = self.get_object()
+        user = request.user
+        like, created = Like.objects.get_or_create(user=user, post=post)
+        if not created:
+            like.delete()
+        return Response({'success': True})
 
-def cars_list_view(request):
-	# получите список авто
-	cars = Car.objects.all()
-	query = request.GET.get('q', '')
-	if query:
-		cars = cars.filter(model__icontains=query)
-	context = {'cars': cars}
-	template_name = 'main/list.html'
-	return render(request, template_name, context)  # передайте необходимый контекст
+    @action(detail=True, methods=['post'])
+    def comment(self, request, pk=None):
+        post = self.get_object()
+        user = request.user
+        serializer = CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(author=user, post=post)
+            return Response(serializer.data, status=201)
+        else:
+            return Response(serializer.errors, status=400)
 
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-def car_details_view(request, car_id):
-	# получите авто, если же его нет, выбросьте ошибку 404
-	try:
-		car = Car.objects.get(pk=car_id)
-		context = {'car': car}
-		template_name = 'main/details.html'
-		return render(request, template_name, context)  # передайте необходимый контекст
-	except Car.DoesNotExist:
-		raise Http404('Car not found')
-
-
-def sales_by_car(request, car_id):
-	try:
-		# получите авто и его продажи
-		car = Car.objects.get(pk=car_id)
-		sales = car.sale_set.all()
-		context = {'car': car, 'sales': sales}
-		template_name = 'main/sales.html'
-		return render(request, template_name, context)  # передайте необходимый контекст
-	except Car.DoesNotExist:
-		raise Http404('Car not found')
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
