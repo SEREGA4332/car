@@ -1,4 +1,4 @@
-django==5.0.2
+django==5.1-rc1
 djangorestframework==3.14.0
 pillow==10.2.0
 psycopg2-binary==2.9.9
