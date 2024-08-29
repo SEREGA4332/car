@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from main.models import  Post, Comment, User
+from main.models import  Post, Comment
+
+
+class User:
+    pass
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
