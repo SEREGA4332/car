@@ -4,40 +4,77 @@ from rest_framework.decorators import action
 from .models import Post, Comment, Like
 from .serializers import PostSerializer, CommentSerializer
 
+
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
-    def update(self, request, *args, **kwargs):
-        post = self.get_object()
-        if post.author == self.request.user:
-            return super().update(request, *args, **kwargs)
-        else:
-            return Response({'error': 'You can only edit your own posts'}, status=403)
-
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['POST'])
     def like(self, request, pk=None):
         post = self.get_object()
         user = request.user
-        like, created = Like.objects.get_or_create(user=user, post=post)
-        if not created:
-            like.delete()
-        return Response({'success': True})
 
-    @action(detail=True, methods=['post'])
-    def comment(self, request, pk=None):
+        # Проверяем, не лайкнул ли уже пользователь этот пост
+        if Like.objects.filter(user=user, post=post).exists():
+            return Response({'status': 'You have already liked this post'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Создаем новый лайк
+        Like.objects.create(user=user, post=post)
+
+        # Увеличиваем счетчик лайков
+        post.likes_count += 1
+        post.save()
+
+        return Response({'status': 'like added'})
+
+    @action(detail=True, methods=['POST'])
+    def unlike(self, request, pk=None):
         post = self.get_object()
         user = request.user
-        serializer = CommentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(author=user, post=post)
-            return Response(serializer.data, status=201)
-        else:
-            return Response(serializer.errors, status=400)
+
+        # Проверяем, существует ли лайк
+        try:
+            like = Like.objects.get(user=user, post=post)
+        except Like.DoesNotExist:
+            return Response({'status': 'You have not liked this post'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Удаляем лайк
+        like.delete()
+
+        # Уменьшаем счетчик лайков
+        if post.likes_count > 0:
+            post.likes_count -= 1
+            post.save()
+
+        return Response({'status': 'like removed'})
+
+
+class LikeViewSet(viewsets.ModelViewSet):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+    permission_classes = [IsAuthenticated, ]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        # Проверяем, не существует ли уже лайк от этого пользователя для этого поста
+        post_id = request.data.get('post')
+        if Like.objects.filter(user=request.user, post_id=post_id).exists():
+            return Response({'detail': 'You have already liked this post.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.user != request.user:
+            return Response({'detail': 'You can only remove your own likes.'},
+                            status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
+
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
