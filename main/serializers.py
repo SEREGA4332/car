@@ -2,23 +2,13 @@ from rest_framework import serializers
 from main.models import  Post, Comment
 
 
-class User:
-    pass
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username']
-
-
 class CommentSerializer(serializers.ModelSerializer):
-    author = UserSerializer()
-    created_at = serializers.DateTimeField(format='%Y-%m-%dT%H:%M:%S.%f')
+    author = serializers.ReadOnlyField(source='author.username')
 
     class Meta:
         model = Comment
-        fields = ['author', 'text', 'created_at']
+        fields = ['id', 'post', 'author', 'text', 'created_at']
+        read_only_fields = ['created_at']
 
 
 class PostSerializer(serializers.ModelSerializer):

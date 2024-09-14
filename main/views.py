@@ -1,4 +1,5 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, status
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import Post, Comment, Like
@@ -52,13 +53,6 @@ class PostViewSet(viewsets.ModelViewSet):
         return Response({'status': 'like removed'})
 
 
-class LikeViewSet(viewsets.ModelViewSet):
-    queryset = Like.objects.all()
-    serializer_class = LikeSerializer
-    permission_classes = [IsAuthenticated, ]
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         # Проверяем, не существует ли уже лайк от этого пользователя для этого поста
@@ -79,7 +73,7 @@ class LikeViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
