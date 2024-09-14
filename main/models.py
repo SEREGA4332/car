@@ -24,4 +24,4 @@ class Comment(models.Model):
         return f"{self.author.username}: {self.text[:20]}..."
 
     class Meta:
-        unique_together = ('user', 'post')
+        unique_together = ('author', 'post')

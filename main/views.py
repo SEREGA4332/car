@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import Post, Comment, Like
+from .models import Post, Comment
 from .serializers import PostSerializer, CommentSerializer
 
 
