@@ -72,7 +72,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'social_network.wsgi.application'
+WSGI_APPLICATION = 'back.wsgi.application'
 
 
 # Database
@@ -81,7 +81,7 @@ WSGI_APPLICATION = 'social_network.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'dj_diplom',
+        'NAME': 'dj_diplom_1',
         'USER': 'postgres',
         'PASSWORD': 'Serg1711',
     }
